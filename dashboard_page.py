@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from dashboard import get_user_details
+from manage_users_page import show_manage_users
 
 def show_dashboard(username):
     user_data = get_user_details(username)
@@ -34,10 +35,10 @@ def show_dashboard(username):
 
     if role.lower() == 'owner':
         tk.Button(dashboard, text="Delete Data", width=30,font=("Helvetica", 25),bg="#81f77c",relief="flat").pack(pady=12)
-        tk.Button(dashboard, text="Change Worker Password", width=30,font=("Helvetica", 25),bg="#81f77c",relief="flat").pack(pady=12)
+        tk.Button(dashboard, text="Manage Users", width=30,font=("Helvetica", 25),bg="#81f77c",relief="flat",command=show_manage_users).pack(pady=12)
 
     # --- Logout Button ---
     tk.Button(dashboard, text="Logout", width=20, command=dashboard.destroy, bg="red", fg="white",font=("Helvetica", 20,"bold"),relief="flat").pack(pady=30)
 
     dashboard.mainloop()
-#show_dashboard("worker")
+show_dashboard("admin")
