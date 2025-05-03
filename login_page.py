@@ -27,15 +27,15 @@ root.geometry("1920x1080")
 root.config(bg="#dafad9")
 
 # --- Login Frame ---
-frame = tk.Frame(root, bg="#b4fab1", bd=2, relief="flat")
+frame = tk.Frame(root, bg="#81f77c", bd=2, relief="flat")
 frame.place(relx=0.5, rely=0.5, anchor="center", width=450, height=300)
 
 # --- Title ---
-title = tk.Label(frame, text="WELLCOME", font=("Helvetica", 20, "bold"), bg="#b4fab1", fg="#333")
+title = tk.Label(frame, text="WELLCOME", font=("Helvetica", 20, "bold"), bg="#81f77c", fg="#333")
 title.pack(pady=15)
 
 # --- Username Label ---
-username_label = tk.Label(frame, text="Username", font=("Helvetica", 12), bg="#b4fab1", fg="#333")
+username_label = tk.Label(frame, text="Username", font=("Helvetica", 12), bg="#81f77c", fg="#333")
 username_label.place(x=100, y=70)
 
 # --- Username Shadow and Entry ---
@@ -46,7 +46,7 @@ entry_username = tk.Entry(frame, font=("Helvetica", 12), bg="#ecfceb", fg="#000"
 entry_username.place(x=100, y=93, width=230, height=30)
 
 # --- Password Label ---
-password_label = tk.Label(frame, text="Password", font=("Helvetica", 12), bg="#b4fab1", fg="#333")
+password_label = tk.Label(frame, text="Password", font=("Helvetica", 12), bg="#81f77c", fg="#333")
 password_label.place(x=100, y=130)
 
 # --- Password Shadow and Entry ---
