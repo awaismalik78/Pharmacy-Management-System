@@ -17,19 +17,19 @@ def login(username, password):
 
             if result:
                 user_id, username, role = result
-                print(f"✅ Login successful! Welcome {username} ({role})")
-                return role
+                
+                return username, role  # ✅ Return both
             else:
                 print("❌ Invalid username or password.")
-                return None
+                return None, None
 
         except Exception as e:
             print("❌ Query error:", e)
             conn.close()
-            return None
+            return None, None
     else:
         print("❌ Database connection failed.")
-        return None
+        return None, None
 
 # Optional test
-# login("admin", "admin123")
+# username, role = login("admin", "admin123")
