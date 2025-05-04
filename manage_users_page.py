@@ -54,7 +54,7 @@ def show_manage_users():
     form.pack(pady=20)
 
     tk.Label(form, text="Username:", bg="#DFFFD6",font=("Helvetica", 20)).grid(row=0, column=0, padx=10, pady=5)
-    entry_username = tk.Entry(formfont=("Helvetica", 15))
+    entry_username = tk.Entry(form,font=("Helvetica", 15))
     entry_username.grid(row=0, column=1, padx=10, pady=5)
 
     tk.Label(form, text="Password:", bg="#DFFFD6",font=("Helvetica", 20)).grid(row=0, column=2, padx=10, pady=5)

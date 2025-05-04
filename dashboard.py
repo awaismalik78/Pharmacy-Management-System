@@ -2,6 +2,7 @@
 import psycopg2
 from connections import create_connection
 
+
 def get_user_details(username):
     conn = create_connection()
     if conn:
