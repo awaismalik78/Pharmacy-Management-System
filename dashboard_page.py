@@ -1,18 +1,11 @@
 import tkinter as tk
 from tkinter import messagebox
-from connections import get_user_details  # Assumed to be in connections.py
+from connections import get_user_details
 from manage_users_page import show_manage_users
 from manage_medicines_page import show_manage_medicines
 from sales_page import show_sales_page
 from purchases_page import show_purchases_page
-
-def show_purchases_page():
-    """Placeholder for purchases page."""
-    messagebox.showinfo("Info", "Purchases page not yet implemented.")
-
-def delete_data():
-    """Placeholder for delete data functionality."""
-    messagebox.showinfo("Info", "Delete Data functionality not yet implemented.")
+from delete_data_page import show_delete_data_page  # Add import
 
 def show_dashboard(username, login_callback=None):
     """
@@ -48,16 +41,16 @@ def show_dashboard(username, login_callback=None):
 
     # Button Configurations
     buttons = [
-        {"text": "Manage Medicines", "command": lambda: show_manage_medicines(), "width": 30},
+        {"text": "Manage Medicines", "command": lambda: show_manage_medicines(username), "width": 30},
         {"text": "Sales", "command": lambda: show_sales_page(username), "width": 30},
-        {"text": "Purchases", "command": show_purchases_page, "width": 30},
+        {"text": "Purchases", "command": lambda: show_purchases_page(username), "width": 30},
     ]
 
     # Owner-specific buttons
     if role.lower() == 'owner':
         buttons.extend([
-            {"text": "Delete Data", "command": delete_data, "width": 30},
-            {"text": "Manage Users", "command": show_manage_users, "width": 30},
+            {"text": "Delete Data", "command": lambda: show_delete_data_page(username), "width": 30},  # Updated
+            {"text": "Manage Users", "command": lambda: show_manage_users(username), "width": 30},
         ])
 
     # Create Buttons
@@ -93,4 +86,4 @@ def logout(dashboard, login_callback):
         login_callback()
 
 # Example usage (replace with login page call)
-show_dashboard("admin", lambda: print("Show login page"))
+#show_dashboard("admin", lambda: print("Show login page"))

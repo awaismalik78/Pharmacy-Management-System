@@ -10,13 +10,13 @@ def handle_login():
     if not username or not password:
         messagebox.showerror("Input Error", "Both fields are required!")
         return
-    
-    role = login(username, password)
-    
-    if role:
-        
+
+    # Get both username and role
+    user, role = login(username, password)
+
+    if user and role:
         root.destroy()  # ✅ Close login window
-        show_dashboard(username)  # ✅ Open dashboard
+        show_dashboard(user, role)  # ✅ Pass both values to dashboard
     else:
         messagebox.showerror("Login Failed", "Invalid username or password.")
 
