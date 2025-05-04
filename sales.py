@@ -1,23 +1,23 @@
-import logging
+#import logging
 from connections import create_connection
 
 # Use existing logger (configured in dashboard.py)
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 def fetch_medicines():
     """Fetch all medicines for the Combobox. Returns (medicines, error)."""
     conn, error = create_connection()
     if error or not conn:
-        logger.error(f"❌ Failed to fetch medicines: {error or 'No connection'}")
+        #logger.error(f"❌ Failed to fetch medicines: {error or 'No connection'}")
         return [], error or "No database connection"
     try:
         cur = conn.cursor()
         cur.execute("SELECT medicine_id, name, price, quantity FROM medicines")
         medicines = cur.fetchall()
-        logger.info("✅ Successfully fetched medicines")
+        #logger.info("✅ Successfully fetched medicines")
         return medicines, None
     except Exception as e:
-        logger.error(f"❌ Error fetching medicines: {e}")
+        #logger.error(f"❌ Error fetching medicines: {e}")
         return [], f"Error fetching medicines: {str(e)}"
     finally:
         conn.close()
@@ -26,19 +26,19 @@ def fetch_user_id(username):
     """Fetch user_id from username. Returns (user_id, error)."""
     conn, error = create_connection()
     if error or not conn:
-        logger.error(f"❌ Failed to fetch user_id: {error or 'No connection'}")
+        #logger.error(f"❌ Failed to fetch user_id: {error or 'No connection'}")
         return None, error or "No database connection"
     try:
         cur = conn.cursor()
         cur.execute("SELECT user_id FROM users WHERE username = %s", (username,))
         result = cur.fetchone()
         if result:
-            logger.info(f"✅ Fetched user_id for {username}")
+            #logger.info(f"✅ Fetched user_id for {username}")
             return result[0], None
-        logger.warning(f"❌ No user found for username {username}")
+        #logger.warning(f"❌ No user found for username {username}")
         return None, f"No user found for username {username}"
     except Exception as e:
-        logger.error(f"❌ Error fetching user_id: {e}")
+        #logger.error(f"❌ Error fetching user_id: {e}")
         return None, f"Error fetching user_id: {str(e)}"
     finally:
         conn.close()
@@ -46,22 +46,22 @@ def fetch_user_id(username):
 def add_sale(customer_id, user_id, cart_items):
     """Process a sale with multiple items, update stock, and log to stock_logs. Returns (success, error)."""
     if not cart_items:
-        logger.error("❌ Cart is empty")
+        #logger.error("❌ Cart is empty")
         return False, "Cart is empty"
     required_keys = {'medicine_id', 'quantity', 'price', 'total_price'}
     for item in cart_items:
         if not all(key in item for key in required_keys):
-            logger.error(f"❌ Invalid cart item structure: {item}")
+            #logger.error(f"❌ Invalid cart item structure: {item}")
             return False, "Invalid cart item structure"
         if item['quantity'] <= 0:
-            logger.error(f"❌ Invalid quantity in cart item: {item['quantity']}")
+            #logger.error(f"❌ Invalid quantity in cart item: {item['quantity']}")
             return False, f"Invalid quantity for medicine ID {item['medicine_id']}"
         if item['total_price'] != item['quantity'] * item['price']:
-            logger.error(f"❌ Inconsistent total_price in cart item: {item}")
+            #logger.error(f"❌ Inconsistent total_price in cart item: {item}")
             return False, f"Inconsistent total_price for medicine ID {item['medicine_id']}"
     conn, error = create_connection()
     if error or not conn:
-        logger.error(f"❌ Failed to add sale: {error or 'No connection'}")
+        #logger.error(f"❌ Failed to add sale: {error or 'No connection'}")
         return False, error or "Failed to connect to database"
     try:
         cur = conn.cursor()
@@ -79,12 +79,12 @@ def add_sale(customer_id, user_id, cart_items):
             result = cur.fetchone()
             if not result:
                 conn.rollback()
-                logger.error(f"❌ Medicine ID {medicine_id} not found")
+                #logger.error(f"❌ Medicine ID {medicine_id} not found")
                 return False, f"Medicine ID {medicine_id} not found"
             stock = result[0]
             if quantity > stock:
                 conn.rollback()
-                logger.error(f"❌ Not enough stock for medicine ID {medicine_id}: requested {quantity}, available {stock}")
+                #logger.error(f"❌ Not enough stock for medicine ID {medicine_id}: requested {quantity}, available {stock}")
                 return False, f"Not enough stock for medicine ID {medicine_id}"
             cur.execute("""
                 INSERT INTO sales_details (sale_id, medicine_id, quantity, selling_price)
@@ -98,11 +98,11 @@ def add_sale(customer_id, user_id, cart_items):
                 VALUES (%s, %s, %s)
             """, (medicine_id, 'sale', -quantity))
         conn.commit()
-        logger.info(f"✅ Sale processed successfully, sale_id: {sale_id}")
+        #logger.info(f"✅ Sale processed successfully, sale_id: {sale_id}")
         return True, None
     except Exception as e:
         conn.rollback()
-        logger.error(f"❌ Error adding sale: {e}")
+        #logger.error(f"❌ Error adding sale: {e}")
         return False, f"Error adding sale: {str(e)}"
     finally:
         conn.close()
