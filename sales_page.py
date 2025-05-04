@@ -4,15 +4,7 @@ import logging
 from sales import fetch_medicines, fetch_user_id, add_sale
 from connections import create_connection
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler("pharmacy_app.log"),
-        logging.StreamHandler()
-    ]
-)
+# Use existing logger (configured in dashboard.py)
 logger = logging.getLogger(__name__)
 
 def show_sales_page(username):
@@ -21,22 +13,9 @@ def show_sales_page(username):
     window.geometry("800x600")
     window.configure(bg="#d7f7f2")
 
-    # Fetch connection
-    conn, error = create_connection()
-    if error or not conn:
-        messagebox.showerror("Error", error or "Failed to connect to database.")
-        window.destroy()
-        logger.error(f"❌ Failed to connect to database: {error or 'No connection'}")
-        return
-
-    # Fetch user_id
-    user_id, error = fetch_user_id(conn, username)
-    if error or not user_id:
-        messagebox.showerror("Error", error or "Failed to fetch user details.")
-        conn.close()
-        window.destroy()
-        logger.error(f"❌ Failed to fetch user_id for {username}: {error or 'No user_id'}")
-        return
+    # Error label
+    error_label = tk.Label(window, text="", bg="#d7f7f2", fg="red", font=("Helvetica", 12), wraplength=700)
+    error_label.pack(pady=5)
 
     # Customer ID (optional)
     tk.Label(window, text="Customer ID (optional):", bg="#d7f7f2", font=("Helvetica", 14)).pack(pady=5)
@@ -45,10 +24,10 @@ def show_sales_page(username):
 
     # Medicine selection
     tk.Label(window, text="Select Medicine:", bg="#d7f7f2", font=("Helvetica", 14)).pack(pady=5)
-    medicines, error = fetch_medicines(conn)
+    medicines, error = fetch_medicines()
     if error:
+        error_label.config(text=error)
         messagebox.showerror("Error", error)
-        conn.close()
         window.destroy()
         logger.error(f"❌ Failed to fetch medicines: {error}")
         return
@@ -82,31 +61,32 @@ def show_sales_page(username):
     cart_items = []
 
     def add_to_cart():
-        selected = medicine_var.get()
-        if not selected:
-            messagebox.showerror("Error", "Please select a medicine.")
-            logger.warning("❌ No medicine selected for cart")
-            return
         try:
+            selected = medicine_var.get()
+            if not selected:
+                error_label.config(text="Please select a medicine.")
+                messagebox.showerror("Error", "Please select a medicine.")
+                logger.warning("❌ No medicine selected for cart")
+                return
             quantity = int(qty_entry.get())
             if quantity <= 0:
+                error_label.config(text="Quantity must be positive.")
                 messagebox.showerror("Error", "Quantity must be positive.")
                 logger.warning("❌ Invalid quantity entered: non-positive")
                 return
             medicine = medicine_dict[selected]
             medicine_id, name, price, stock = medicine
             if quantity > stock:
+                error_label.config(text=f"Not enough stock for {name}. Available: {stock}")
                 messagebox.showwarning("Warning", f"Not enough stock for {name}. Available: {stock}")
                 logger.warning(f"❌ Insufficient stock for {name}: requested {quantity}, available {stock}")
                 return
-
-            # Check for duplicate medicine (optional: comment out to allow duplicates)
             for item in cart_items:
                 if item["medicine_id"] == medicine_id:
+                    error_label.config(text=f"{name} is already in the cart.")
                     messagebox.showerror("Error", f"{name} is already in the cart.")
                     logger.warning(f"❌ Duplicate medicine {name} (ID: {medicine_id})")
                     return
-
             total_price = price * quantity
             cart_items.append({
                 "medicine_id": medicine_id,
@@ -116,55 +96,86 @@ def show_sales_page(username):
                 "total_price": total_price
             })
             tree.insert("", "end", values=(medicine_id, name, quantity, f"${price:.2f}", f"${total_price:.2f}"))
-            
             logger.info(f"✅ Added {name} (ID: {medicine_id}, Quantity: {quantity}) to cart")
             medicine_var.set("")
             qty_entry.delete(0, tk.END)
+            error_label.config(text="")
         except ValueError:
+            error_label.config(text="Please enter a valid quantity.")
             messagebox.showerror("Error", "Please enter a valid quantity.")
             logger.warning("❌ Invalid quantity entered: non-numeric")
 
     def remove_from_cart():
-        selected = tree.selection()
-        if not selected:
-            messagebox.showerror("Error", "Please select an item to remove.")
-            logger.warning("❌ No item selected for removal")
-            return
-        for item in selected:
-            index = tree.index(item)
-            removed_item = cart_items.pop(index)
-            tree.delete(item)
-            logger.info(f"✅ Removed {removed_item['name']} (ID: {removed_item['medicine_id']}) from cart")
+        try:
+            selected = tree.selection()
+            if not selected:
+                error_label.config(text="Please select an item to remove.")
+                messagebox.showerror("Error", "Please select an item to remove.")
+                logger.warning("❌ No item selected for removal")
+                return
+            for item in selected:
+                index = tree.index(item)
+                removed_item = cart_items.pop(index)
+                tree.delete(item)
+                logger.info(f"✅ Removed {removed_item['name']} (ID: {removed_item['medicine_id']}) from cart")
+                error_label.config(text="")
+        except Exception as e:
+            error_label.config(text=f"Unexpected error: {str(e)}")
+            logger.error(f"❌ Unexpected error in remove_from_cart: {e}", exc_info=True)
 
     def confirm_sale():
-        if not cart_items:
-            messagebox.showerror("Error", "Cart is empty.")
-            logger.warning("❌ Attempted to confirm empty cart")
-            return
-        customer_id = customer_entry.get()
-        customer_id = int(customer_id) if customer_id.strip() else None
-        if customer_id:
-            try:
-                cur = conn.cursor()
-                cur.execute("SELECT customer_id FROM customers WHERE customer_id = %s", (customer_id,))
-                if not cur.fetchone():
-                    messagebox.showerror("Error", "Invalid customer ID.")
-                    logger.warning(f"❌ Invalid customer ID: {customer_id}")
-                    return
-            except Exception as e:
-                messagebox.showerror("Error", f"Error validating customer ID: {e}")
-                logger.error(f"❌ Error validating customer ID {customer_id}: {e}")
+        try:
+            if not cart_items:
+                error_label.config(text="Cart is empty.")
+                messagebox.showerror("Error", "Cart is empty.")
+                logger.warning("❌ Attempted to confirm empty cart")
                 return
-        success, error = add_sale(customer_id, user_id, cart_items)
-        if success:
-            messagebox.showinfo("Success", "✅ Sale processed successfully.")
-            logger.info("✅ Sale confirmed successfully")
-            cart_items.clear()
-            tree.delete(*tree.get_children())
-            customer_entry.delete(0, tk.END)
-        else:
-            messagebox.showerror("Error", error or "Failed to process sale.")
-            logger.error(f"❌ Failed to confirm sale: {error}")
+            customer_id = customer_entry.get().strip()
+            customer_id = int(customer_id) if customer_id else None
+            if customer_id:
+                conn, error = create_connection()
+                if error or not conn:
+                    error_label.config(text=error or "Failed to connect to database.")
+                    messagebox.showerror("Error", error or "Failed to connect to database.")
+                    logger.error(f"❌ Failed to validate customer ID: {error or 'No connection'}")
+                    return
+                try:
+                    cur = conn.cursor()
+                    cur.execute("SELECT customer_id FROM customers WHERE customer_id = %s", (customer_id,))
+                    if not cur.fetchone():
+                        error_label.config(text="Invalid customer ID.")
+                        messagebox.showerror("Error", "Invalid customer ID.")
+                        logger.warning(f"❌ Invalid customer ID: {customer_id}")
+                        return
+                except Exception as e:
+                    error_label.config(text=f"Error validating customer ID: {str(e)}")
+                    messagebox.showerror("Error", f"Error validating customer ID: {str(e)}")
+                    logger.error(f"❌ Error validating customer ID {customer_id}: {e}")
+                    return
+                finally:
+                    conn.close()
+            user_id, error = fetch_user_id(username)
+            if error or not user_id:
+                error_label.config(text=error or "Failed to fetch user details.")
+                messagebox.showerror("Error", error or "Failed to fetch user details.")
+                logger.error(f"❌ Failed to fetch user_id for {username}: {error or 'No user_id'}")
+                return
+            success, error = add_sale(customer_id, user_id, cart_items)
+            if success:
+                messagebox.showinfo("Success", "✅ Sale processed successfully.")
+                logger.info("✅ Sale confirmed successfully")
+                cart_items.clear()
+                tree.delete(*tree.get_children())
+                customer_entry.delete(0, tk.END)
+                error_label.config(text="")
+            else:
+                error_label.config(text=error or "Failed to process sale.")
+                messagebox.showerror("Error", error or "Failed to process sale.")
+                logger.error(f"❌ Failed to confirm sale: {error}")
+        except Exception as e:
+            error_label.config(text=f"Unexpected error: {str(e)}")
+            messagebox.showerror("Error", f"Unexpected error: {str(e)}")
+            logger.error(f"❌ Unexpected error in confirm_sale: {e}", exc_info=True)
 
     # Buttons
     tk.Button(window, text="Add to Cart", command=add_to_cart, bg="#4CAF50", fg="white", font=("Helvetica", 14)).pack(pady=5)
@@ -172,7 +183,6 @@ def show_sales_page(username):
     tk.Button(window, text="Confirm Sale", command=confirm_sale, bg="#2196F3", fg="white", font=("Helvetica", 14)).pack(pady=5)
 
     def on_close():
-        conn.close()
         window.destroy()
         logger.info("✅ Sales page closed")
     window.protocol("WM_DELETE_WINDOW", on_close)

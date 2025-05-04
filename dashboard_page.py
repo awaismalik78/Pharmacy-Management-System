@@ -4,7 +4,7 @@ from connections import get_user_details
 from manage_users_page import show_manage_users
 from manage_medicines_page import show_manage_medicines
 from sales_page import show_sales_page
-from purchases_page import show_purchases_page
+
 from delete_data_page import show_delete_data_page  # Add import
 
 def show_dashboard(username, login_callback=None):
@@ -41,14 +41,15 @@ def show_dashboard(username, login_callback=None):
 
     # Button Configurations
     buttons = [
-        {"text": "Manage Medicines", "command": lambda: show_manage_medicines(username), "width": 30},
+        
         {"text": "Sales", "command": lambda: show_sales_page(username), "width": 30},
-        {"text": "Purchases", "command": lambda: show_purchases_page(username), "width": 30},
+       
     ]
 
     # Owner-specific buttons
     if role.lower() == 'owner':
         buttons.extend([
+            {"text": "Manage Medicines", "command": lambda: show_manage_medicines(username), "width": 30},
             {"text": "Delete Data", "command": lambda: show_delete_data_page(username), "width": 30},  # Updated
             {"text": "Manage Users", "command": lambda: show_manage_users(username), "width": 30},
         ])
